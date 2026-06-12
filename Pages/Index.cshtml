@@ -128,6 +128,7 @@
     @{
         var allBirthdays = new List<dynamic>();
         var allHolidays = new List<dynamic>();
+        var allNotes = new List<dynamic>();
 
         int displayYear = (Model.Year.GetValueOrDefault() > 0) ? Model.Year.GetValueOrDefault() : DateTime.Now.Year;
 
@@ -182,34 +183,43 @@
                 {
                     foreach (var b in mm.Birthdays)
                     {
-                        var dow = DowAbbrev(displayYear, mm.Month, b.day);
-                        allBirthdays.Add(new { month = mm.Month, day = b.day, name = b.name, dow = dow, monthAbbrev = MonthAbbrev(mm.Month) });
+                        var dow = DowAbbrev(displayYear, mm.Month, b.Day);
+                        allBirthdays.Add(new { Month = mm.Month, Day = b.Day, Name = b.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month) });
                     }
                 }
                 if (mm.Holidays != null)
                 {
                     foreach (var h in mm.Holidays)
                     {
-                        var dow = DowAbbrev(displayYear, mm.Month, h.day);
-                        allHolidays.Add(new { month = mm.Month, day = h.day, name = h.name, dow = dow, monthAbbrev = MonthAbbrev(mm.Month) });
+                        var dow = DowAbbrev(displayYear, mm.Month, h.Day);
+                        allHolidays.Add(new { Month = mm.Month, Day = h.Day, Name = h.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month) });
+                    }
+                }
+                if (mm.Notes != null)
+                {
+                    foreach (var n in mm.Notes)
+                    {
+                        var dow = DowAbbrev(displayYear, mm.Month, n.Day);
+                        allNotes.Add(new { Month = mm.Month, Day = n.Day, Name = n.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month) });
                     }
                 }
             }
 
-            allBirthdays = allBirthdays.OrderBy(x => x.month).ThenBy(x => x.day).ToList();
-            allHolidays = allHolidays.OrderBy(x => x.month).ThenBy(x => x.day).ToList();
+            allBirthdays = allBirthdays.OrderBy(x => x.Month).ThenBy(x => x.Day).ToList();
+            allHolidays = allHolidays.OrderBy(x => x.Month).ThenBy(x => x.Day).ToList();
+            allNotes = allNotes.OrderBy(x => x.Month).ThenBy(x => x.Day).ToList();
         }
     }
 
     <form method="post" class="row g-3 align-items-center">
         <div class="col-auto">
-            <label for="yearInput" class="col-form-label">Ano (4 dígitos)</label>
+            <label for="yearInput" class="col-form-label">Ano</label>
         </div>
         <div class="col-auto">
             <input id="yearInput" name="Year" type="number" class="form-control" min="1" max="9999" placeholder="2026" value="@Model.Year" />
         </div>
         <div class="col-auto">
-            <button type="submit" class="btn btn-primary">Gerar</button>
+            <button type="submit" class="btn btn-primary">Visualizar</button>
         </div>
         <div class="col-auto">
             <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#birthdaysModal">Aniversários</button>
@@ -267,22 +277,21 @@
                                                             var isWeekend = (dIndex == 0 || dIndex == 6);
 
                                                             // Check holiday, birthday and note
-                                                            var holiday = m.Holidays?.FirstOrDefault(h => h.day == dayVal.Value);
-                                                            var birthday = m.Birthdays?.FirstOrDefault(b => b.day == dayVal.Value);
-                                                            var note = Model.Notes?.FirstOrDefault(n => n.day == dayVal.Value && n.month == m.Month && 
-                                                                (n.recurring || n.year == m.Year));
+                                                            var holiday = m.Holidays?.FirstOrDefault(h => h.Day == dayVal.Value);
+                                                            var birthday = m.Birthdays?.FirstOrDefault(b => b.Day == dayVal.Value);
+                                                            var note = m.Notes?.FirstOrDefault(n => n.Day == dayVal.Value && (n.Recurring || n.Year == m.Year));
 
                                                             var titleParts = new List<string>();
-                                                            if (holiday != null) titleParts.Add(holiday.name);
-                                                            if (birthday != null) titleParts.Add(birthday.name);
-                                                            if (note != null) titleParts.Add(note.name);
+                                                            if (holiday != null && (holiday.Recurring || holiday.Year == m.Year)) titleParts.Add(holiday.Name);
+                                                            if (birthday != null) titleParts.Add(birthday.Name);
+                                                            if (note != null) titleParts.Add(note.Name);
                                                             var title = titleParts.Count > 0 ? string.Join(" | ", titleParts) : "";
 
                                                             // Determine background and text styles. Holiday overrides weekend/weekday backgrounds.
                                                             var bgStyle = "";
                                                             var textStyle = "";
 
-                                                            if (holiday != null)
+                                                            if (holiday != null && (holiday.Recurring || holiday.Year == m.Year))
                                                             {
                                                                 // Holiday background: light green if today, otherwise light blue
                                                                 if (isToday)
@@ -356,7 +365,7 @@
     }
 </div>
 
-<!-- Modal para adicionar Aniversário ou Feriado -->
+<!-- Modal para adicionar Aniversário / Feriado / Anotação -->
 <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -370,9 +379,9 @@
                         <label for="eventType" class="form-label">Tipo de Evento</label>
                         <select class="form-select" id="eventType" required>
                             <option value="">-- Selecione --</option>
-                            <option value="birthday">Aniversário</option>
-                            <option value="holiday">Feriado</option>
-                            <option value="note">Anotação</option>
+                            <option value="birthdays">Aniversário</option>
+                            <option value="holidays">Feriado</option>
+                            <option value="notes">Anotação</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -384,13 +393,13 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="isRecurring" checked>
                             <label class="form-check-label" for="isRecurring">
-                                Recorrente (acontece todos os anos)
+                                Recorrente
                             </label>
                         </div>
                     </div>
-                    <div id="yearSection" class="mb-3" style="display: none;">
+                    <div id="yearSection" class="mb-3" style="display: block;">
                         <label for="eventYear" class="form-label">Ano</label>
-                        <input type="number" class="form-control" id="eventYear" min="2000" max="2099" />
+                        <input type="number" class="form-control" id="eventYear"/>
                     </div>
                     <div id="dateInfo" class="mb-3 alert alert-info" style="display: none;">
                         Data selecionada: <strong id="selectedDate"></strong>
@@ -415,14 +424,21 @@
     const birthdays = [
         @foreach (var b in allBirthdays)
         {
-            <text>{ day: @b.day, month: @b.month, name: '@b.name.Replace("'", "\\'")' },</text>
+            <text>{ day: @b.Day, month: @b.Month, name: '@b.Name.Replace("'", "\\'")' },</text>
         }
     ];
 
     const holidays = [
         @foreach (var h in allHolidays)
         {
-            <text>{ day: @h.day, month: @h.month, name: '@h.name.Replace("'", "\\'")' },</text>
+            <text>{ day: @h.Day, month: @h.Month, name: '@h.Name.Replace("'", "\\'")' },</text>
+        }
+    ];
+
+    const notes = [
+        @foreach (var n in allNotes)
+        {
+            <text>{ day: @n.Day, month: @n.Month, name: '@n.Name.Replace("'", "\\'")' },</text>
         }
     ];
 
@@ -433,7 +449,8 @@
             selectedDay = parseInt(this.getAttribute('data-day'));
             selectedMonth = parseInt(this.getAttribute('data-month'));
             selectedYear = parseInt(this.getAttribute('data-year'));
-
+            
+            const eventYear = document.getElementById('eventYear');
             const monthNames = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
             document.getElementById('selectedDate').textContent = `${selectedDay} ${monthNames[selectedMonth]} ${selectedYear}`;
             document.getElementById('dateInfo').style.display = 'block';
@@ -441,10 +458,12 @@
             // Limpar formulário
             document.getElementById('eventForm').reset();
             document.getElementById('charCount').textContent = '0';
+            eventYear.value = selectedYear;
 
             // Verificar se já existe aniversário ou feriado para este dia
             const existingBirthday = birthdays.find(b => b.day === selectedDay && b.month === selectedMonth);
             const existingHoliday = holidays.find(h => h.day === selectedDay && h.month === selectedMonth);
+            const existingNotes = notes.find(n => n.day === selectedDay && n.month === selectedMonth);
 
             if (existingBirthday) {
                 document.getElementById('eventType').value = 'birthday';
@@ -454,12 +473,21 @@
                 document.getElementById('eventType').value = 'holiday';
                 document.getElementById('eventName').value = existingHoliday.name;
                 document.getElementById('charCount').textContent = existingHoliday.name.length;
+            } else if (existingNotes) {
+                document.getElementById('eventType').value = 'note';
+                document.getElementById('eventName').value = existingNotes.name;
+                document.getElementById('charCount').textContent = existingNotes.name.length;
             }
 
             // Abrir modal
             const modal = new bootstrap.Modal(document.getElementById('addEventModal'));
             modal.show();
         });
+    });
+
+    // Recorrente
+    document.getElementById('eventType').addEventListener('change', function() {
+        document.getElementById('recurringSection').style.display = this.value === 'birthday' ? 'none' : 'block';
     });
 
     // Contador de caracteres
@@ -475,8 +503,11 @@
 
     // Botão Salvar
     document.getElementById('btnSave').addEventListener('click', async function() {
+
         const eventType = document.getElementById('eventType').value;
         const eventName = document.getElementById('eventName').value.trim();
+        const eventYear = document.getElementById('eventYear').value;
+        const eventRecurring = document.getElementById('isRecurring').checked;
 
         if (!eventType) {
             alert('Por favor, selecione o tipo de evento.');
@@ -488,7 +519,9 @@
                 day: selectedDay,
                 month: selectedMonth,
                 type: eventType,
-                name: eventName
+                name: eventName,
+                year: eventYear,
+                recurring: eventRecurring
             };
 
             console.log('Enviando:', payload);
@@ -559,13 +592,13 @@
                                 @foreach (var b in allBirthdays)
                                 {
                                     var today = DateTime.Now.Date;
-                                    var eventDate = new DateTime(displayYear, b.month, b.day).Date;
+                                    var eventDate = new DateTime(displayYear, b.Month, b.Day).Date;
                                     var daysLeft = (eventDate - today).Days;
                                     var badgeClass = daysLeft > 0 ? "bg-success" : (daysLeft == 0 ? "bg-warning" : "bg-danger");
                                     <tr>
-                                        <td>@String.Format("{0:D2} {1}", b.day, b.monthAbbrev)</td>
-                                        <td>@b.dow</td>
-                                        <td>@b.name</td>
+                                        <td>@String.Format("{0:D2} {1}", b.Day, b.MonthAbbrev)</td>
+                                        <td>@b.Dow</td>
+                                        <td>@b.Name</td>
                                         <td><span class="badge @badgeClass">@daysLeft</span></td>
                                     </tr>
                                 }
@@ -610,13 +643,13 @@
                                 @foreach (var h in allHolidays)
                                 {
                                     var today = DateTime.Now.Date;
-                                    var eventDate = new DateTime(displayYear, h.month, h.day).Date;
+                                    var eventDate = new DateTime(displayYear, h.Month, h.Day).Date;
                                     var daysLeft = (eventDate - today).Days;
                                     var badgeClass = daysLeft > 0 ? "bg-success" : (daysLeft == 0 ? "bg-warning" : "bg-danger");
                                     <tr>
-                                        <td>@String.Format("{0:D2} {1}", h.day, h.monthAbbrev)</td>
-                                        <td>@h.dow</td>
-                                        <td>@h.name</td>
+                                        <td>@String.Format("{0:D2} {1}", h.Day, h.MonthAbbrev)</td>
+                                        <td>@h.Dow</td>
+                                        <td>@h.Name</td>
                                         <td><span class="badge @badgeClass">@daysLeft</span></td>
                                     </tr>
                                 }
@@ -627,6 +660,57 @@
                 else
                 {
                     <div class="alert alert-info">Nenhum feriado encontrado.</div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Notes -->
+<div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notesModalLabel">Anotações</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (allNotes.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Dia</th>
+                                    <th>Nome</th>
+                                    <th>Dias</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var n in allNotes)
+                                {
+                                    var today = DateTime.Now.Date;
+                                    var eventDate = new DateTime(displayYear, n.Month, n.Day).Date;
+                                    var daysLeft = (eventDate - today).Days;
+                                    var badgeClass = daysLeft > 0 ? "bg-success" : (daysLeft == 0 ? "bg-warning" : "bg-danger");
+                                    <tr>
+                                        <td>@String.Format("{0:D2} {1}", n.Day, n.MonthAbbrev)</td>
+                                        <td>@n.Dow</td>
+                                        <td>@n.Name</td>
+                                        <td><span class="badge @badgeClass">@daysLeft</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">Nenhuma anotação encontrada.</div>
                 }
             </div>
             <div class="modal-footer">

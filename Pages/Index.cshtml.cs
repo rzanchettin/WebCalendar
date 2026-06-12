@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Globalization;
+using WebCalendar.Entities;
 
 namespace WebCalendar.Pages
 {
@@ -11,23 +12,25 @@ namespace WebCalendar.Pages
         public IndexModel(IWebHostEnvironment env)
         {
             _env = env;
+            Months = [];
+            Holidays = [];
+            Birthdays = [];
+            Notes = [];
         }
 
         [BindProperty]
         public int? Year { get; set; }
-
         public List<MonthView> Months { get; set; }
-        public List<Holiday> Holidays { get; set; }
-        public List<Birthday> Birthdays { get; set; }
-        public List<Note> Notes { get; set; }
+        public List<Event> Holidays { get; set; }
+        public List<Event> Birthdays { get; set; }
+        public List<Event> Notes { get; set; }
 
         public void OnGet()
         {
-            // Pre-fill the year input with the current year and build the calendar
             Year = DateTime.Now.Year;
-            LoadHolidays();
-            LoadBirthdays();
-            LoadNotes();
+            Holidays = LoadEvents("holidays");
+            Birthdays = LoadEvents("birthdays");
+            Notes = LoadEvents("notes");
             Months = BuildYear(Year.Value);
         }
 
@@ -35,14 +38,14 @@ namespace WebCalendar.Pages
         {
             if (Year.HasValue && Year.Value >= 1 && Year.Value <= 9999)
             {
-                LoadHolidays();
-                LoadBirthdays();
-                LoadNotes();
+                Holidays = LoadEvents("holidays");
+                Birthdays = LoadEvents("birthdays");
+                Notes = LoadEvents("notes");
                 Months = BuildYear(Year.Value);
             }
             else
             {
-                ModelState.AddModelError("Year", "Enter a valid 4-digit year between 1 and 9999.");
+                ModelState.AddModelError("Year", "Enter a valid 4-digit Year between 1 and 9999.");
             }
         }
 
@@ -61,11 +64,11 @@ namespace WebCalendar.Pages
             var first = new DateTime(year, month, 1);
             int days = DateTime.DaysInMonth(year, month);
 
-            // Weeks: list of 7-day rows, Sunday..Saturday. Use null for empty cells.
+            // Weeks: list of 7-Day rows, Sunday..Saturday. Use null for empty cells.
             var weeks = new List<List<int?>>();
             var currentWeek = new List<int?>();
 
-            // Add leading empty days until Sunday-based first day index
+            // Add leading empty days until Sunday-based first Day index
             int leading = (int)first.DayOfWeek; // Sunday = 0
             for (int i = 0; i < leading; i++) currentWeek.Add(null);
 
@@ -75,7 +78,7 @@ namespace WebCalendar.Pages
                 if (currentWeek.Count == 7)
                 {
                     weeks.Add(currentWeek);
-                    currentWeek = new List<int?>();
+                    currentWeek = [];
                 }
             }
 
@@ -92,145 +95,45 @@ namespace WebCalendar.Pages
                 Year = year,
                 Name = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)),
                 Weeks = weeks,
-                Holidays = Holidays?.Where(h => h.month == month).ToList(),
-                Birthdays = Birthdays?.Where(b => b.month == month).ToList()
+                Holidays = Holidays?.Where(h => h.Month == month).ToList() ?? [],
+                Birthdays = Birthdays?.Where(b => b.Month == month).ToList() ?? [],
+                Notes = Notes?.Where(n => n.Month == month).ToList() ?? []
             };
         }
 
-        private void LoadHolidays()
+        private List<Event> LoadEvents(string eventType)
         {
+            List<Event> eventList = [];
             try
             {
-                var path = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "holidays.json");
+                var path = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), $"{eventType}.json");
                 if (System.IO.File.Exists(path))
                 {
                     var json = System.IO.File.ReadAllText(path);
-                    Holidays = System.Text.Json.JsonSerializer.Deserialize<List<Holiday>>(json);
+                    eventList = System.Text.Json.JsonSerializer.Deserialize<List<Event>>(json) ?? [];
 
-                    // Compatibilidade retroativa: adicionar 'recurring' se não existir
-                    if (Holidays != null)
+                    // Compatibilidade retroativa: adicionar 'Recurring' se não existir
+                    if (eventList != null)
                     {
-                        foreach (var h in Holidays)
+                        foreach (var h in eventList)
                         {
-                            // Se recurring não foi setado, use o padrão
-                            if (h.recurring == false && h.year == null)
+                            // Se Recurring não foi setado, use o padrão
+                            if (h.Recurring == false && h.Year == null)
                             {
                                 // Assume true para dados antigos
-                                h.recurring = true;
+                                h.Recurring = true;
                             }
                         }
                     }
                 }
-                else
-                {
-                    Holidays = new List<Holiday>();
-                }
             }
             catch
             {
-                Holidays = new List<Holiday>();
+                eventList = [];
             }
-        }
 
-        private void LoadBirthdays()
-        {
-            try
-            {
-                var path = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "birthday.json");
-                if (System.IO.File.Exists(path))
-                {
-                    var json = System.IO.File.ReadAllText(path);
-                    Birthdays = System.Text.Json.JsonSerializer.Deserialize<List<Birthday>>(json);
+            return eventList ?? [];
 
-                    // Compatibilidade retroativa: adicionar 'recurring' se não existir
-                    if (Birthdays != null)
-                    {
-                        foreach (var b in Birthdays)
-                        {
-                            // Aniversários sempre são recorrentes
-                            b.recurring = true;
-                        }
-                    }
-                }
-                else
-                {
-                    Birthdays = new List<Birthday>();
-                }
-            }
-            catch
-            {
-                Birthdays = new List<Birthday>();
-            }
-        }
-
-        private void LoadNotes()
-        {
-            try
-            {
-                var path = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "notes.json");
-                if (System.IO.File.Exists(path))
-                {
-                    var json = System.IO.File.ReadAllText(path);
-                    Notes = System.Text.Json.JsonSerializer.Deserialize<List<Note>>(json);
-
-                    // Compatibilidade retroativa
-                    if (Notes != null)
-                    {
-                        foreach (var n in Notes)
-                        {
-                            // Se recurring não foi setado, use o padrão
-                            if (n.recurring == false && n.year == null)
-                            {
-                                n.recurring = true;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    Notes = new List<Note>();
-                }
-            }
-            catch
-            {
-                Notes = new List<Note>();
-            }
-        }
-
-        public class MonthView
-        {
-            public int Month { get; set; }
-            public int Year { get; set; }
-            public string Name { get; set; }
-            public List<List<int?>> Weeks { get; set; }
-            public List<Holiday> Holidays { get; set; }
-            public List<Birthday> Birthdays { get; set; }
-        }
-
-        public class Holiday
-        {
-            public int day { get; set; }
-            public int month { get; set; }
-            public string name { get; set; }
-            public bool recurring { get; set; } = true; // true = toda ano, false = apenas um ano específico
-            public int? year { get; set; } // preenchido apenas se recurring = false
-        }
-
-        public class Birthday
-        {
-            public int day { get; set; }
-            public int month { get; set; }
-            public string name { get; set; }
-            public bool recurring { get; set; } = true; // sempre true para aniversários
-        }
-
-        public class Note
-        {
-            public int day { get; set; }
-            public int month { get; set; }
-            public string name { get; set; }
-            public bool recurring { get; set; } = true; // true = toda ano, false = apenas um ano específico
-            public int? year { get; set; } // preenchido apenas se recurring = false
         }
     }
 }

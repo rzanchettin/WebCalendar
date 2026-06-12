@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using WebCalendar.Entities;
 
 namespace WebCalendar.Controllers
 {
@@ -14,37 +15,51 @@ namespace WebCalendar.Controllers
             _env = env;
         }
 
+        /// <summary>
+        /// Salva um evento (aniversário, feriado ou nota) em um arquivo JSON correspondente. 
+        /// Se o nome do evento estiver vazio, a entrada será removida. Retorna uma resposta indicando sucesso ou falha.
+        /// </summary>
+        /// <param Name="eventData"></param>
+        /// <returns></returns>
         [HttpPost("save")]
         public IActionResult SaveEvent([FromBody] EventData eventData)
         {
             // Validações
-            if (eventData == null || eventData.day < 1 || eventData.day > 31 || eventData.month < 1 || eventData.month > 12 ||
-                string.IsNullOrWhiteSpace(eventData.type))
+            if (eventData == null || eventData.Day < 1 || eventData.Day > 31 || eventData.Month < 1 || eventData.Month > 12 ||
+                string.IsNullOrWhiteSpace(eventData.Type))
             {
                 return BadRequest(new { success = false, message = "Invalid data" });
             }
 
-            string type = eventData.type.Trim().ToLower();
-            string name = (eventData.name ?? "").Trim();
-            int day = eventData.day;
-            int month = eventData.month;
+            string type = eventData.Type.Trim().ToLower();
+            string name = (eventData.Name ?? "").Trim();
+            int day = eventData.Day;
+            int month = eventData.Month;
+            int year = eventData.Year;
+            bool recurring = eventData.Recurring;
 
             try
             {
-                if (type == "birthday")
-                {
-                    var path = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "birthday.json");
-                    var birthdays = LoadBirthdays(path);
 
-                    // Encontra aniversário para este dia/mês
-                    var existing = birthdays.FirstOrDefault(b => b.day == day && b.month == month);
+                string path = string.Empty;
+                List<EventInfo> events = [];
+
+                if (type == "birthdays" || type == "holidays" || type == "notes")
+                {
+                    path = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), $"{type}.json");
+                    events = LoadEvents(path);
+
+                    // Encontra evento
+                    var existing = events.FirstOrDefault(b => b.Day == day && b.Month == month);
 
                     if (string.IsNullOrWhiteSpace(name))
                     {
                         // Se nome está vazio, remove a entrada
                         if (existing != null)
                         {
-                            birthdays.Remove(existing);
+                            events.Remove(existing);
+                            existing.Year = year;
+                            existing.Recurring = recurring;
                         }
                     }
                     else
@@ -52,52 +67,20 @@ namespace WebCalendar.Controllers
                         // Se tem nome, adiciona ou atualiza
                         if (existing != null)
                         {
-                            existing.name = name;
+                            existing.Name = name;
                         }
                         else
                         {
-                            birthdays.Add(new EventInfo { day = day, month = month, name = name });
+                            events.Add(new EventInfo { Day = day, Month = month, Name = name, Year = year, Recurring = recurring });
                         }
                     }
 
-                    var json = JsonSerializer.Serialize(birthdays, new JsonSerializerOptions { WriteIndented = true });
-                    System.IO.File.WriteAllText(path, json);
-                }
-                else if (type == "holiday")
-                {
-                    var path = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "holidays.json");
-                    var holidays = LoadHolidays(path);
-
-                    // Encontra feriado para este dia/mês
-                    var existing = holidays.FirstOrDefault(h => h.day == day && h.month == month);
-
-                    if (string.IsNullOrWhiteSpace(name))
-                    {
-                        // Se nome está vazio, remove a entrada
-                        if (existing != null)
-                        {
-                            holidays.Remove(existing);
-                        }
-                    }
-                    else
-                    {
-                        // Se tem nome, adiciona ou atualiza
-                        if (existing != null)
-                        {
-                            existing.name = name;
-                        }
-                        else
-                        {
-                            holidays.Add(new EventInfo { day = day, month = month, name = name });
-                        }
-                    }
-
-                    var json = JsonSerializer.Serialize(holidays, new JsonSerializerOptions { WriteIndented = true });
+                    var json = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
                     System.IO.File.WriteAllText(path, json);
                 }
                 else
                 {
-                    return BadRequest(new { success = false, message = "Invalid event type" });
+                    return BadRequest(new { success = false, message = "Invalid event Type" });
                 }
 
                 return Ok(new { success = true, message = "Saved successfully" });
@@ -108,55 +91,27 @@ namespace WebCalendar.Controllers
             }
         }
 
-        private List<EventInfo> LoadBirthdays(string path)
+        /// <summary>
+        /// Carrega os eventos de um arquivo JSON. Se o arquivo não existir ou ocorrer um erro, retorna uma lista vazia.
+        /// </summary>
+        /// <param Name="path"></param>
+        /// <returns></returns>
+        private static List<EventInfo> LoadEvents(string path)
         {
             try
             {
                 if (System.IO.File.Exists(path))
                 {
                     var json = System.IO.File.ReadAllText(path);
-                    var birthdays = JsonSerializer.Deserialize<List<EventInfo>>(json);
-                    return birthdays ?? new List<EventInfo>();
+                    var events = JsonSerializer.Deserialize<List<EventInfo>>(json);
+                    return events ?? [];
                 }
-                return new List<EventInfo>();
+                return [];
             }
             catch
             {
-                return new List<EventInfo>();
+                return [];
             }
-        }
-
-        private List<EventInfo> LoadHolidays(string path)
-        {
-            try
-            {
-                if (System.IO.File.Exists(path))
-                {
-                    var json = System.IO.File.ReadAllText(path);
-                    var holidays = JsonSerializer.Deserialize<List<EventInfo>>(json);
-                    return holidays ?? new List<EventInfo>();
-                }
-                return new List<EventInfo>();
-            }
-            catch
-            {
-                return new List<EventInfo>();
-            }
-        }
-
-        public class EventData
-        {
-            public int day { get; set; }
-            public int month { get; set; }
-            public string type { get; set; }
-            public string name { get; set; }
-        }
-
-        public class EventInfo
-        {
-            public int day { get; set; }
-            public int month { get; set; }
-            public string name { get; set; }
         }
     }
 }

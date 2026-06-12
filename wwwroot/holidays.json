@@ -1,52 +1,86 @@
 [
   {
-    "day": 1,
-    "month": 1,
-    "name": "Confraterniza\u00E7\u00E3o Universal"
+    "Day": 1,
+    "Month": 1,
+    "Name": "Confraterniza\u00E7\u00E3o Universal",
+    "Year": 0,
+    "Recurring": true
   },
   {
-    "day": 1,
-    "month": 5,
-    "name": "Dia do Trabalho"
+    "Day": 1,
+    "Month": 5,
+    "Name": "Dia do Trabalho",
+    "Year": 0,
+    "Recurring": true
   },
   {
-    "day": 21,
-    "month": 4,
-    "name": "Tiradentes"
+    "Day": 21,
+    "Month": 4,
+    "Name": "Tiradentes",
+    "Year": 0,
+    "Recurring": true
   },
   {
-    "day": 9,
-    "month": 7,
-    "name": "Revolu\u00E7\u00E3o Constitucional"
+    "Day": 9,
+    "Month": 7,
+    "Name": "Revolu\u00E7\u00E3o Constitucional",
+    "Year": 0,
+    "Recurring": true
   },
   {
-    "day": 7,
-    "month": 9,
-    "name": "Independ\u00EAncia"
+    "Day": 7,
+    "Month": 9,
+    "Name": "Independ\u00EAncia",
+    "Year": 0,
+    "Recurring": true
   },
   {
-    "day": 12,
-    "month": 10,
-    "name": "Nossa Senhora"
+    "Day": 12,
+    "Month": 10,
+    "Name": "Nossa Senhora",
+    "Year": 0,
+    "Recurring": true
   },
   {
-    "day": 2,
-    "month": 11,
-    "name": "Finados"
+    "Day": 2,
+    "Month": 11,
+    "Name": "Finados",
+    "Year": 0,
+    "Recurring": true
   },
   {
-    "day": 15,
-    "month": 11,
-    "name": "Proclama\u00E7\u00E3o da Rep\u00FAblica"
+    "Day": 15,
+    "Month": 11,
+    "Name": "Proclama\u00E7\u00E3o da Rep\u00FAblica",
+    "Year": 0,
+    "Recurring": true
   },
   {
-    "day": 25,
-    "month": 12,
-    "name": "Natal"
+    "Day": 25,
+    "Month": 12,
+    "Name": "Natal",
+    "Year": 0,
+    "Recurring": true
   },
   {
-    "day": 25,
-    "month": 1,
-    "name": "Anivers\u00E1rio de S\u00E3o Paulo"
+    "Day": 25,
+    "Month": 1,
+    "Name": "Anivers\u00E1rio de S\u00E3o Paulo",
+    "Year": 0,
+    "Recurring": true
+  },
+  {
+    "Day": 4,
+    "Month": 6,
+    "Name": "teste",
+    "Year": 2025,
+    "Recurring": false
+  },
+  {
+    "Day": 10,
+    "Month": 6,
+    "Name": "teste2",
+    "Year": 0,
+    "Recurring": true
   }
 ]
