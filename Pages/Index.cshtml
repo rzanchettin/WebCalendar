@@ -1,0 +1,637 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<style>
+    /* Light pink background for weekend days (Saturday and Sunday) */
+    /* Use a more specific selector and !important to override Bootstrap table styles */
+    table.table td.weekend {
+        background-color: #ffe6f2 !important;
+        color: inherit;
+    }
+
+    /* Weekday cells (non-weekend, non-today) */
+    table.table td.weekday {
+        background-color: #fff9c4 !important; /* light yellow */
+        color: inherit;
+    }
+
+    /* Today: black background and white text */
+    .today {
+        background-color: #000 !important;
+        color: #fff !important;
+    }
+    /* Month name header styling */
+    table.table th.month-name {
+        background-color: #0d6efd; /* bootstrap primary blue */
+        color: #fff;
+        text-align: center;
+        padding: 0.5rem;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    /* Weekday header (three-letter day names) */
+    table.table th.weekday-header {
+        background-color: #fff9c4 !important;
+        color: inherit;
+    }
+
+    /* Birthday circle around the day number (red circumference) */
+    .birthday-circle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border: 2px solid #c00;
+        border-radius: 50%;
+        line-height: 1;
+        font-weight: 600;
+        background: transparent;
+        color: inherit;
+    }
+
+    /* Note circle around the day number (green circumference) */
+    .note-circle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border: 2px solid #28a745;
+        border-radius: 50%;
+        line-height: 1;
+        font-weight: 600;
+        background: transparent;
+        color: inherit;
+    }
+
+    /* If cell is small, ensure the circle doesn't overflow */
+    table.table td { vertical-align: middle; }
+</style>
+
+<div class="container-fluid px-1 mt-4">
+    <h1>Calendário</h1>
+
+    <style>
+        /* Side panels sticky behavior */
+        .side-panel {
+            position: -webkit-sticky; /* for Safari */
+            position: sticky;
+            top: 1rem;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+            padding-right: 0.5rem;
+            padding-left: 0.5rem;
+        }
+
+        /* Wrapper for center calendar with fixed content width */
+        .calendar-wrapper {
+            flex: 0 0 auto;
+            width: 60%;
+            padding: 0 1rem;
+        }
+
+        .side-panel .panel-card {
+            margin-bottom: 1rem;
+        }
+
+        /* container that holds date and weekday abbreviation in a fixed column */
+        .side-panel .date-block {
+            /* fixed column width to keep alignment across both panels */
+            flex: 0 0 6.5rem;
+            min-width: 6.5rem;
+            max-width: 6.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-right: 0.75rem;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            white-space: nowrap; /* prevent wrapping that would change height */
+        }
+
+        .side-panel .list-item-date {
+            font-weight: 600;
+            display: block;
+        }
+
+        .side-panel .list-item-dow {
+            color: #666;
+            font-size: 0.85rem;
+        }
+    </style>
+
+    @* Compute aggregated, ordered lists for side panels and include weekday abbreviation *@
+    @{
+        var allBirthdays = new List<dynamic>();
+        var allHolidays = new List<dynamic>();
+
+        int displayYear = (Model.Year.GetValueOrDefault() > 0) ? Model.Year.GetValueOrDefault() : DateTime.Now.Year;
+
+        string DowAbbrev(int y, int m, int d)
+        {
+            try
+            {
+                var dow = new DateTime(y, m, d).DayOfWeek;
+                return dow switch
+                {
+                    DayOfWeek.Monday => "seg",
+                    DayOfWeek.Tuesday => "ter",
+                    DayOfWeek.Wednesday => "qua",
+                    DayOfWeek.Thursday => "qui",
+                    DayOfWeek.Friday => "sex",
+                    DayOfWeek.Saturday => "sáb",
+                    DayOfWeek.Sunday => "dom",
+                    _ => "",
+                };
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        string MonthAbbrev(int m)
+        {
+            return m switch
+            {
+                1 => "Jan",
+                2 => "Fev",
+                3 => "Mar",
+                4 => "Abr",
+                5 => "Mai",
+                6 => "Jun",
+                7 => "Jul",
+                8 => "Ago",
+                9 => "Set",
+                10 => "Out",
+                11 => "Nov",
+                12 => "Dez",
+                _ => m.ToString()
+            };
+        }
+
+        if (Model.Months != null)
+        {
+            foreach (var mm in Model.Months)
+            {
+                if (mm.Birthdays != null)
+                {
+                    foreach (var b in mm.Birthdays)
+                    {
+                        var dow = DowAbbrev(displayYear, mm.Month, b.day);
+                        allBirthdays.Add(new { month = mm.Month, day = b.day, name = b.name, dow = dow, monthAbbrev = MonthAbbrev(mm.Month) });
+                    }
+                }
+                if (mm.Holidays != null)
+                {
+                    foreach (var h in mm.Holidays)
+                    {
+                        var dow = DowAbbrev(displayYear, mm.Month, h.day);
+                        allHolidays.Add(new { month = mm.Month, day = h.day, name = h.name, dow = dow, monthAbbrev = MonthAbbrev(mm.Month) });
+                    }
+                }
+            }
+
+            allBirthdays = allBirthdays.OrderBy(x => x.month).ThenBy(x => x.day).ToList();
+            allHolidays = allHolidays.OrderBy(x => x.month).ThenBy(x => x.day).ToList();
+        }
+    }
+
+    <form method="post" class="row g-3 align-items-center">
+        <div class="col-auto">
+            <label for="yearInput" class="col-form-label">Ano (4 dígitos)</label>
+        </div>
+        <div class="col-auto">
+            <input id="yearInput" name="Year" type="number" class="form-control" min="1" max="9999" placeholder="2026" value="@Model.Year" />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Gerar</button>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#birthdaysModal">Aniversários</button>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#holidaysModal">Feriados</button>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#notesModal">Anotações</button>
+        </div>
+    </form>
+
+    @if (!Model.ModelState.IsValid)
+    {
+        <div class="text-danger mt-2">@Html.ValidationSummary()</div>
+    }
+
+    @if (Model.Months != null)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="row">
+                    @for (int i = 0; i < Model.Months.Count; i++)
+                    {
+                        var m = Model.Months[i];
+                        <div class="col-12 col-md-4 mb-4">
+                            <div class="card">
+                                <div class="card-body p-2">
+                                    <table class="table table-sm table-bordered mb-0 text-center">
+                                        <thead>
+                                            <tr>
+                                                <th class="month-name" colspan="7">@m.Name @m.Year</th>
+                                            </tr>
+                                            <tr>
+                                                <th class="weekday-header">Dom</th>
+                                                <th class="weekday-header">Seg</th>
+                                                <th class="weekday-header">Ter</th>
+                                                <th class="weekday-header">Qua</th>
+                                                <th class="weekday-header">Qui</th>
+                                                <th class="weekday-header">Sex</th>
+                                                <th class="weekday-header">Sáb</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var week in m.Weeks)
+                                            {
+                                                <tr>
+                                                    @for (int dIndex = 0; dIndex < week.Count; dIndex++)
+                                                    {
+                                                        var dayVal = week[dIndex];
+                                                        if (dayVal.HasValue)
+                                                        {
+                                                            var cellDate = new DateTime(m.Year, m.Month, dayVal.Value);
+                                                            var isToday = cellDate.Date == DateTime.Now.Date;
+                                                            var isWeekend = (dIndex == 0 || dIndex == 6);
+
+                                                            // Check holiday, birthday and note
+                                                            var holiday = m.Holidays?.FirstOrDefault(h => h.day == dayVal.Value);
+                                                            var birthday = m.Birthdays?.FirstOrDefault(b => b.day == dayVal.Value);
+                                                            var note = Model.Notes?.FirstOrDefault(n => n.day == dayVal.Value && n.month == m.Month && 
+                                                                (n.recurring || n.year == m.Year));
+
+                                                            var titleParts = new List<string>();
+                                                            if (holiday != null) titleParts.Add(holiday.name);
+                                                            if (birthday != null) titleParts.Add(birthday.name);
+                                                            if (note != null) titleParts.Add(note.name);
+                                                            var title = titleParts.Count > 0 ? string.Join(" | ", titleParts) : "";
+
+                                                            // Determine background and text styles. Holiday overrides weekend/weekday backgrounds.
+                                                            var bgStyle = "";
+                                                            var textStyle = "";
+
+                                                            if (holiday != null)
+                                                            {
+                                                                // Holiday background: light green if today, otherwise light blue
+                                                                if (isToday)
+                                                                {
+                                                                    bgStyle = "background-color:#d4edda;"; // light green
+                                                                }
+                                                                else
+                                                                {
+                                                                    bgStyle = "background-color:#cfe2ff;"; // light blue
+                                                                }
+
+                                                                // Holiday text: red bold, override other color rules
+                                                                textStyle = "color:#c00 !important;font-weight:700;";
+                                                            }
+                                                            else if (isToday)
+                                                            {
+                                                                bgStyle = "background-color:#000;color:#fff;";
+                                                            }
+                                                            else if (isWeekend)
+                                                            {
+                                                                bgStyle = "background-color:#ffe6f2;";
+                                                            }
+                                                            else
+                                                            {
+                                                                bgStyle = "background-color:#fff9c4;";
+                                                            }
+
+                                                            // If today, add a thicker blue border
+                                                            var borderStyle = "";
+                                                            if (isToday)
+                                                            {
+                                                                // Use an outline instead of border so it is always visible (including left side)
+                                                                // and make it a bit thicker
+                                                                borderStyle = "outline:3px solid #0d6efd;outline-offset:-1px;";
+                                                            }
+
+                                                            // Compose final style
+                                                            var finalStyle = bgStyle + textStyle + borderStyle;
+
+                                                            <td style="@(finalStyle)" title="@(title)" class="clickable-day" data-day="@dayVal" data-month="@m.Month" data-year="@m.Year">
+                                                                @if (birthday != null)
+                                                                {
+                                                                    <span class="birthday-circle">@dayVal</span>
+                                                                }
+                                                                else if (note != null)
+                                                                {
+                                                                    <span class="note-circle">@dayVal</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    @dayVal
+                                                                }
+                                                            </td>
+                                                        }
+                                                        else
+                                                        {
+                                                            <td></td>
+                                                        }
+                                                    }
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal para adicionar Aniversário ou Feriado -->
+<div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addEventModalLabel">Adicionar Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="eventForm">
+                    <div class="mb-3">
+                        <label for="eventType" class="form-label">Tipo de Evento</label>
+                        <select class="form-select" id="eventType" required>
+                            <option value="">-- Selecione --</option>
+                            <option value="birthday">Aniversário</option>
+                            <option value="holiday">Feriado</option>
+                            <option value="note">Anotação</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="eventName" class="form-label">Descrição (máximo 60 caracteres)</label>
+                        <input type="text" class="form-control" id="eventName" maxlength="60" placeholder="Ex: João Silva" required />
+                        <small class="form-text text-muted"><span id="charCount">0</span>/60</small>
+                    </div>
+                    <div id="recurringSection" class="mb-3" style="display: none;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isRecurring" checked>
+                            <label class="form-check-label" for="isRecurring">
+                                Recorrente (acontece todos os anos)
+                            </label>
+                        </div>
+                    </div>
+                    <div id="yearSection" class="mb-3" style="display: none;">
+                        <label for="eventYear" class="form-label">Ano</label>
+                        <input type="number" class="form-control" id="eventYear" min="2000" max="2099" />
+                    </div>
+                    <div id="dateInfo" class="mb-3 alert alert-info" style="display: none;">
+                        Data selecionada: <strong id="selectedDate"></strong>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnClear">Limpar</button>
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-primary" id="btnSave">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedDay = null;
+    let selectedMonth = null;
+    let selectedYear = null;
+
+    // Arrays com aniversários e feriados do ano atual
+    const birthdays = [
+        @foreach (var b in allBirthdays)
+        {
+            <text>{ day: @b.day, month: @b.month, name: '@b.name.Replace("'", "\\'")' },</text>
+        }
+    ];
+
+    const holidays = [
+        @foreach (var h in allHolidays)
+        {
+            <text>{ day: @h.day, month: @h.month, name: '@h.name.Replace("'", "\\'")' },</text>
+        }
+    ];
+
+    // Detectar clique nas células do calendário
+    document.querySelectorAll('.clickable-day').forEach(cell => {
+        cell.style.cursor = 'pointer';
+        cell.addEventListener('click', function() {
+            selectedDay = parseInt(this.getAttribute('data-day'));
+            selectedMonth = parseInt(this.getAttribute('data-month'));
+            selectedYear = parseInt(this.getAttribute('data-year'));
+
+            const monthNames = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            document.getElementById('selectedDate').textContent = `${selectedDay} ${monthNames[selectedMonth]} ${selectedYear}`;
+            document.getElementById('dateInfo').style.display = 'block';
+
+            // Limpar formulário
+            document.getElementById('eventForm').reset();
+            document.getElementById('charCount').textContent = '0';
+
+            // Verificar se já existe aniversário ou feriado para este dia
+            const existingBirthday = birthdays.find(b => b.day === selectedDay && b.month === selectedMonth);
+            const existingHoliday = holidays.find(h => h.day === selectedDay && h.month === selectedMonth);
+
+            if (existingBirthday) {
+                document.getElementById('eventType').value = 'birthday';
+                document.getElementById('eventName').value = existingBirthday.name;
+                document.getElementById('charCount').textContent = existingBirthday.name.length;
+            } else if (existingHoliday) {
+                document.getElementById('eventType').value = 'holiday';
+                document.getElementById('eventName').value = existingHoliday.name;
+                document.getElementById('charCount').textContent = existingHoliday.name.length;
+            }
+
+            // Abrir modal
+            const modal = new bootstrap.Modal(document.getElementById('addEventModal'));
+            modal.show();
+        });
+    });
+
+    // Contador de caracteres
+    document.getElementById('eventName').addEventListener('input', function() {
+        document.getElementById('charCount').textContent = this.value.length;
+    });
+
+    // Botão Limpar
+    document.getElementById('btnClear').addEventListener('click', function() {
+        document.getElementById('eventName').value = '';
+        document.getElementById('charCount').textContent = '0';
+    });
+
+    // Botão Salvar
+    document.getElementById('btnSave').addEventListener('click', async function() {
+        const eventType = document.getElementById('eventType').value;
+        const eventName = document.getElementById('eventName').value.trim();
+
+        if (!eventType) {
+            alert('Por favor, selecione o tipo de evento.');
+            return;
+        }
+
+        try {
+            const payload = {
+                day: selectedDay,
+                month: selectedMonth,
+                type: eventType,
+                name: eventName
+            };
+
+            console.log('Enviando:', payload);
+
+            const response = await fetch('/api/event/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            console.log('Status:', response.status);
+
+            const contentType = response.headers.get('content-type');
+            console.log('Content-Type:', contentType);
+
+            let responseData = null;
+
+            if (contentType && contentType.includes('application/json')) {
+                responseData = await response.json();
+            } else {
+                const text = await response.text();
+                console.log('Resposta (texto):', text);
+                responseData = { message: text || 'Erro desconhecido' };
+            }
+
+            console.log('Resposta (parsed):', responseData);
+
+            if (response.ok) {
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addEventModal'));
+                modal.hide();
+                // Recarregar página para atualizar calendário
+                location.reload();
+            } else {
+                alert('Erro ao salvar evento: ' + (responseData.message || responseData));
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao salvar evento: ' + error.message);
+        }
+    });
+</script>
+
+<!-- Modal para Aniversários -->
+<div class="modal fade" id="birthdaysModal" tabindex="-1" aria-labelledby="birthdaysModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="birthdaysModalLabel">Aniversariantes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (allBirthdays.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Dia</th>
+                                    <th>Nome</th>
+                                    <th>Dias</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var b in allBirthdays)
+                                {
+                                    var today = DateTime.Now.Date;
+                                    var eventDate = new DateTime(displayYear, b.month, b.day).Date;
+                                    var daysLeft = (eventDate - today).Days;
+                                    var badgeClass = daysLeft > 0 ? "bg-success" : (daysLeft == 0 ? "bg-warning" : "bg-danger");
+                                    <tr>
+                                        <td>@String.Format("{0:D2} {1}", b.day, b.monthAbbrev)</td>
+                                        <td>@b.dow</td>
+                                        <td>@b.name</td>
+                                        <td><span class="badge @badgeClass">@daysLeft</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">Nenhum aniversariante encontrado.</div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Feriados -->
+<div class="modal fade" id="holidaysModal" tabindex="-1" aria-labelledby="holidaysModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="holidaysModalLabel">Feriados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (allHolidays.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Dia</th>
+                                    <th>Nome</th>
+                                    <th>Dias</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var h in allHolidays)
+                                {
+                                    var today = DateTime.Now.Date;
+                                    var eventDate = new DateTime(displayYear, h.month, h.day).Date;
+                                    var daysLeft = (eventDate - today).Days;
+                                    var badgeClass = daysLeft > 0 ? "bg-success" : (daysLeft == 0 ? "bg-warning" : "bg-danger");
+                                    <tr>
+                                        <td>@String.Format("{0:D2} {1}", h.day, h.monthAbbrev)</td>
+                                        <td>@h.dow</td>
+                                        <td>@h.name</td>
+                                        <td><span class="badge @badgeClass">@daysLeft</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">Nenhum feriado encontrado.</div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
