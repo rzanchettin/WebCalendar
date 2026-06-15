@@ -1,0 +1,58 @@
+﻿@using WebCalendar.Entities
+@model EventModalViewModel
+
+<div class="modal fade" id="@Model.ModalId" tabindex="-1" aria-labelledby="@Model.ModalIdLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="@Model.ModalIdLabel">@Model.Title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                @if (Model.Items.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Dia</th>
+                                    <th>Nome</th>
+                                    <th>Dias</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Items)
+                                {
+                                    var today = DateTime.Now.Date;
+                                    var eventDate = new DateTime(Model.Year, item.Month, item.Day).Date;
+                                    var daysLeft = (eventDate - today).Days;
+
+                                    var badgeClass = daysLeft > 0
+                                        ? "bg-success"
+                                        : (daysLeft == 0 ? "bg-warning" : "bg-danger");
+
+                                    <tr>
+                                        <td>@($"{item.Day:D2} {item.MonthAbbrev}")</td>
+                                        <td>@item.Dow</td>
+                                        <td>@item.Name</td>
+                                        <td><span class="badge @badgeClass">@daysLeft</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">@Model.EmptyMessage</div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>

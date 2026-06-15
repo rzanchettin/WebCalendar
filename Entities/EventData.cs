@@ -9,5 +9,4 @@
         public int Year { get; set; }
         public bool Recurring { get; set; }
     }
-
 }

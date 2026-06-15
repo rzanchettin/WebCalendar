@@ -1,4 +1,5 @@
 ﻿@page
+@using WebCalendar.Entities
 @model IndexModel
 @{
     ViewData["Title"] = "Home page";
@@ -209,6 +210,34 @@
             allHolidays = allHolidays.OrderBy(x => x.Month).ThenBy(x => x.Day).ToList();
             allNotes = allNotes.OrderBy(x => x.Month).ThenBy(x => x.Day).ToList();
         }
+
+        var birthdaysVm = allBirthdays.Select(x => new EventItem
+        {
+            Day = x.Day,
+            Month = x.Month,
+            Name = x.Name,
+            Dow = x.Dow,
+            MonthAbbrev = x.MonthAbbrev
+        }).ToList();
+
+        var holidaysVm = allHolidays.Select(x => new EventItem
+        {
+            Day = x.Day,
+            Month = x.Month,
+            Name = x.Name,
+            Dow = x.Dow,
+            MonthAbbrev = x.MonthAbbrev
+        }).ToList();
+
+        var notesVm = allNotes.Select(x => new EventItem
+        {
+            Day = x.Day,
+            Month = x.Month,
+            Name = x.Name,
+            Dow = x.Dow,
+            MonthAbbrev = x.MonthAbbrev
+        }).ToList();
+
     }
 
     <form method="post" class="row g-3 align-items-center">
@@ -567,155 +596,30 @@
     });
 </script>
 
-<!-- Modal para Aniversários -->
-<div class="modal fade" id="birthdaysModal" tabindex="-1" aria-labelledby="birthdaysModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="birthdaysModalLabel">Aniversariantes</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                @if (allBirthdays.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Dia</th>
-                                    <th>Nome</th>
-                                    <th>Dias</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var b in allBirthdays)
-                                {
-                                    var today = DateTime.Now.Date;
-                                    var eventDate = new DateTime(displayYear, b.Month, b.Day).Date;
-                                    var daysLeft = (eventDate - today).Days;
-                                    var badgeClass = daysLeft > 0 ? "bg-success" : (daysLeft == 0 ? "bg-warning" : "bg-danger");
-                                    <tr>
-                                        <td>@String.Format("{0:D2} {1}", b.Day, b.MonthAbbrev)</td>
-                                        <td>@b.Dow</td>
-                                        <td>@b.Name</td>
-                                        <td><span class="badge @badgeClass">@daysLeft</span></td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-                else
-                {
-                    <div class="alert alert-info">Nenhum aniversariante encontrado.</div>
-                }
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-            </div>
-        </div>
-    </div>
-</div>
+@await Html.PartialAsync("_EventModal", new EventModalViewModel
+{
+    ModalId = "birthdaysModal",
+    Title = "Aniversariantes",
+    EmptyMessage = "Nenhum aniversariante encontrado.",
+    Year = displayYear,
+    Items = birthdaysVm
+})
 
-<!-- Modal para Feriados -->
-<div class="modal fade" id="holidaysModal" tabindex="-1" aria-labelledby="holidaysModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="holidaysModalLabel">Feriados</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                @if (allHolidays.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Dia</th>
-                                    <th>Nome</th>
-                                    <th>Dias</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var h in allHolidays)
-                                {
-                                    var today = DateTime.Now.Date;
-                                    var eventDate = new DateTime(displayYear, h.Month, h.Day).Date;
-                                    var daysLeft = (eventDate - today).Days;
-                                    var badgeClass = daysLeft > 0 ? "bg-success" : (daysLeft == 0 ? "bg-warning" : "bg-danger");
-                                    <tr>
-                                        <td>@String.Format("{0:D2} {1}", h.Day, h.MonthAbbrev)</td>
-                                        <td>@h.Dow</td>
-                                        <td>@h.Name</td>
-                                        <td><span class="badge @badgeClass">@daysLeft</span></td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-                else
-                {
-                    <div class="alert alert-info">Nenhum feriado encontrado.</div>
-                }
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-            </div>
-        </div>
-    </div>
-</div>
+@await Html.PartialAsync("_EventModal", new EventModalViewModel
+{
+    ModalId = "holidaysModal",
+    Title = "Feriados",
+    EmptyMessage = "Nenhum feriado encontrado.",
+    Year = displayYear,
+    Items = holidaysVm
+})
 
-<!-- Modal para Notes -->
-<div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="notesModalLabel">Anotações</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                @if (allNotes.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Dia</th>
-                                    <th>Nome</th>
-                                    <th>Dias</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var n in allNotes)
-                                {
-                                    var today = DateTime.Now.Date;
-                                    var eventDate = new DateTime(displayYear, n.Month, n.Day).Date;
-                                    var daysLeft = (eventDate - today).Days;
-                                    var badgeClass = daysLeft > 0 ? "bg-success" : (daysLeft == 0 ? "bg-warning" : "bg-danger");
-                                    <tr>
-                                        <td>@String.Format("{0:D2} {1}", n.Day, n.MonthAbbrev)</td>
-                                        <td>@n.Dow</td>
-                                        <td>@n.Name</td>
-                                        <td><span class="badge @badgeClass">@daysLeft</span></td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-                else
-                {
-                    <div class="alert alert-info">Nenhuma anotação encontrada.</div>
-                }
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-            </div>
-        </div>
-    </div>
-</div>
+@await Html.PartialAsync("_EventModal", new EventModalViewModel
+{
+    ModalId = "notesModal",
+    Title = "Anotações",
+    EmptyMessage = "Nenhuma anotação encontrada.",
+    Year = displayYear,
+    Items = notesVm
+}) 
+
