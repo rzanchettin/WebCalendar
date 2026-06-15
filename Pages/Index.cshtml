@@ -123,15 +123,12 @@
 
     }
 
-    <form method="post" class="row g-3 align-items-center">
+    <form method="post" class="row g-3 align-items-center" id="mainForm">
         <div class="col-auto">
             <label for="yearInput" class="col-form-label">Ano</label>
         </div>
         <div class="col-auto">
             <input id="yearInput" name="Year" type="number" class="form-control" min="1" max="9999" placeholder="2026" value="@Model.Year" />
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary">Visualizar</button>
         </div>
         <div class="col-auto">
             <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#birthdaysModal">Aniversários</button>
@@ -396,6 +393,12 @@
             modal.show();
         });
     });
+
+    // post do formulário ao alterar o ano para recarregar o calendário
+    document.getElementById('yearInput').addEventListener('change', function() {
+        document.getElementById('mainForm').submit();
+    });
+
 
     // Recorrente
     document.getElementById('eventType').addEventListener('change', function() {
