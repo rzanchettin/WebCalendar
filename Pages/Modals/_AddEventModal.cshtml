@@ -1,0 +1,52 @@
+﻿@page
+@model WebCalendar.Pages.IndexModel
+
+<div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addEventModalLabel">Adicionar Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="eventForm">
+                    <div class="mb-3">
+                        <label for="eventType" class="form-label">Tipo de Evento</label>
+                        <select class="form-select" id="eventType" required>
+                            <option value="">-- Selecione --</option>
+                            <option value="birthdays">Aniversário</option>
+                            <option value="holidays">Feriado</option>
+                            <option value="notes">Anotação</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="eventName" class="form-label">Descrição (máximo 60 caracteres)</label>
+                        <input type="text" class="form-control" id="eventName" maxlength="60" placeholder="Ex: João Silva" required />
+                        <small class="form-text text-muted"><span id="charCount">0</span>/60</small>
+                    </div>
+                    <div id="recurringSection" class="mb-3" style="display: none;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isRecurring" checked>
+                            <label class="form-check-label" for="isRecurring">
+                                Recorrente
+                            </label>
+                        </div>
+                    </div>
+                    <div id="yearSection" class="mb-3" style="display: block;">
+                        <label for="eventYear" class="form-label">Ano</label>
+                        <input type="number" class="form-control" id="eventYear" />
+                    </div>
+                    <div id="dateInfo" class="mb-3 alert alert-info" style="display: none;">
+                        Data selecionada: <strong id="selectedDate"></strong>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnClear">Limpar</button>
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-primary" id="btnSave">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+

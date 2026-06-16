@@ -274,57 +274,17 @@
     }
 </div>
 
-<!-- Modal para adicionar Aniversário / Feriado / Anotação -->
-<div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addEventModalLabel">Adicionar Evento</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="eventForm">
-                    <div class="mb-3">
-                        <label for="eventType" class="form-label">Tipo de Evento</label>
-                        <select class="form-select" id="eventType" required>
-                            <option value="">-- Selecione --</option>
-                            <option value="birthdays">Aniversário</option>
-                            <option value="holidays">Feriado</option>
-                            <option value="notes">Anotação</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="eventName" class="form-label">Descrição (máximo 60 caracteres)</label>
-                        <input type="text" class="form-control" id="eventName" maxlength="60" placeholder="Ex: João Silva" required />
-                        <small class="form-text text-muted"><span id="charCount">0</span>/60</small>
-                    </div>
-                    <div id="recurringSection" class="mb-3" style="display: none;">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="isRecurring" checked>
-                            <label class="form-check-label" for="isRecurring">
-                                Recorrente
-                            </label>
-                        </div>
-                    </div>
-                    <div id="yearSection" class="mb-3" style="display: block;">
-                        <label for="eventYear" class="form-label">Ano</label>
-                        <input type="number" class="form-control" id="eventYear"/>
-                    </div>
-                    <div id="dateInfo" class="mb-3 alert alert-info" style="display: none;">
-                        Data selecionada: <strong id="selectedDate"></strong>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="btnClear">Limpar</button>
-                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Fechar</button>
-                <button type="button" class="btn btn-primary" id="btnSave">Salvar</button>
-            </div>
-        </div>
-    </div>
-</div>
+<partial name="Modals/_AddEventModal"/>
 
 <script>
+
+    function decodeHtml(html)
+    {
+        var txt = document.createElement("textarea");
+        txt.innerHTML = html;
+        return txt.value;
+    }
+
     let selectedDay = null;
     let selectedMonth = null;
     let selectedYear = null;
@@ -376,20 +336,20 @@
 
             if (existingBirthday) {
                 document.getElementById('eventType').value = 'birthdays';
-                document.getElementById('eventName').value = existingBirthday.name;
+                document.getElementById('eventName').value = decodeHtml(existingBirthday.name);
                 document.getElementById('charCount').textContent = existingBirthday.name.length;
                 document.getElementById('recurringSection').style.display = "none";
                 document.getElementById('isRecurring').checked = true; // Aniversários são sempre recorrentes
             } else if (existingHoliday) {
                 document.getElementById('eventType').value = 'holidays';
-                document.getElementById('eventName').value = existingHoliday.name;
+                document.getElementById('eventName').value = decodeHtml(existingHoliday.name);
                 document.getElementById('charCount').textContent = existingHoliday.name.length;
                 document.getElementById('recurringSection').style.display = "block";
                 document.getElementById('isRecurring').checked = existingHoliday.recurring;
 
             } else if (existingNotes) {
                 document.getElementById('eventType').value = 'notes';
-                document.getElementById('eventName').value = existingNotes.name;
+                document.getElementById('eventName').value = decodeHtml(existingNotes.name);
                 document.getElementById('charCount').textContent = existingNotes.name.length;
                 document.getElementById('recurringSection').style.display = "block";
                 document.getElementById('isRecurring').checked = existingNotes.recurring;
@@ -490,7 +450,7 @@
     });
 </script>
 
-@await Html.PartialAsync("_EventModal", new EventModalViewModel
+@await Html.PartialAsync("Modals/_ListEventModal", new ListEventModalViewModel
 {
     ModalId = "birthdaysModal",
     Title = "Aniversariantes",
@@ -499,7 +459,7 @@
     Items = birthdaysVm
 })
 
-@await Html.PartialAsync("_EventModal", new EventModalViewModel
+@await Html.PartialAsync("Modals/_ListEventModal", new ListEventModalViewModel
 {
     ModalId = "holidaysModal",
     Title = "Feriados",
@@ -508,7 +468,7 @@
     Items = holidaysVm
 })
 
-@await Html.PartialAsync("_EventModal", new EventModalViewModel
+@await Html.PartialAsync("Modals/_ListEventModal", new ListEventModalViewModel
 {
     ModalId = "notesModal",
     Title = "Anotações",

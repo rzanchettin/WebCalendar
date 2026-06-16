@@ -1,6 +1,6 @@
 ﻿namespace WebCalendar.Entities
 {
-    public class EventModalViewModel
+    public class ListEventModalViewModel
     {
         public string ModalId { get; set; } = string.Empty;
         public string ModalIdLabel => ModalId + "Label";
