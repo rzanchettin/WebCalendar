@@ -25,10 +25,9 @@ namespace WebCalendar.Controllers
         public IActionResult SaveEvent([FromBody] EventData eventData)
         {
             // Validações
-            if (eventData == null || eventData.Day < 1 || eventData.Day > 31 || eventData.Month < 1 || eventData.Month > 12 ||
-                string.IsNullOrWhiteSpace(eventData.Type))
+            if (eventData == null || eventData.Day < 1 || eventData.Day > 31 || eventData.Month < 1 || eventData.Month > 12)
             {
-                return BadRequest(new { success = false, message = "Invalid data" });
+                return BadRequest(new { success = false, message = "Dados inválidos" });
             }
 
             string type = eventData.Type.Trim().ToLower();
@@ -40,39 +39,42 @@ namespace WebCalendar.Controllers
 
             try
             {
-
-                string path = string.Empty;
-                List<EventInfo> events = [];
-
                 if (type == "birthdays" || type == "holidays" || type == "notes")
                 {
-                    path = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), $"{type}.json");
-                    events = LoadEvents(path);
+                    string path = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), $"{type}.json");
+                    List<EventInfo> events = LoadEvents(path);
 
                     // Encontra evento
                     var existing = events.FirstOrDefault(b => b.Day == day && b.Month == month);
 
+                    // Se nome está vazio, remove a entrada
                     if (string.IsNullOrWhiteSpace(name))
                     {
-                        // Se nome está vazio, remove a entrada
+                        // Se existe, remove. Se não, retorna erro
                         if (existing != null)
                         {
                             events.Remove(existing);
                             existing.Year = year;
                             existing.Recurring = recurring;
                         }
+                        else
+                        {
+                            return BadRequest(new { success = false, message = "Evento não encontrado para remoção" });
+                        }
+                    }
+
+                    // Se tem nome, adiciona ou atualiza
+                    if (existing != null)
+                    {
+                        existing.Name = name;
+                        existing.Recurring = recurring;
+                        existing.Year = year;
+                        existing.Month = month;
+                        existing.Day = day;
                     }
                     else
                     {
-                        // Se tem nome, adiciona ou atualiza
-                        if (existing != null)
-                        {
-                            existing.Name = name;
-                        }
-                        else
-                        {
-                            events.Add(new EventInfo { Day = day, Month = month, Name = name, Year = year, Recurring = recurring });
-                        }
+                        events.Add(new EventInfo { Day = day, Month = month, Name = name, Year = year, Recurring = recurring });
                     }
 
                     var json = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
@@ -80,10 +82,10 @@ namespace WebCalendar.Controllers
                 }
                 else
                 {
-                    return BadRequest(new { success = false, message = "Invalid event Type" });
+                    return BadRequest(new { success = false, message = "Tipo de evento inválido" });
                 }
 
-                return Ok(new { success = true, message = "Saved successfully" });
+                return Ok(new { success = true, message = "Salvo com sucesso" });
             }
             catch (Exception ex)
             {

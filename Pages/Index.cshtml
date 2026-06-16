@@ -68,7 +68,7 @@
                     foreach (var b in mm.Birthdays)
                     {
                         var dow = DowAbbrev(displayYear, mm.Month, b.Day);
-                        allBirthdays.Add(new { Month = mm.Month, Day = b.Day, Name = b.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month) });
+                        allBirthdays.Add(new { Month = mm.Month, Day = b.Day, Name = b.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month), Recurring = true });
                     }
                 }
                 if (mm.Holidays != null)
@@ -76,7 +76,7 @@
                     foreach (var h in mm.Holidays)
                     {
                         var dow = DowAbbrev(displayYear, mm.Month, h.Day);
-                        allHolidays.Add(new { Month = mm.Month, Day = h.Day, Name = h.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month) });
+                        allHolidays.Add(new { Month = mm.Month, Day = h.Day, Name = h.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month), Recurring = h.Recurring });
                     }
                 }
                 if (mm.Notes != null)
@@ -84,7 +84,7 @@
                     foreach (var n in mm.Notes)
                     {
                         var dow = DowAbbrev(displayYear, mm.Month, n.Day);
-                        allNotes.Add(new { Month = mm.Month, Day = n.Day, Name = n.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month) });
+                        allNotes.Add(new { Month = mm.Month, Day = n.Day, Name = n.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month), Recurring = n.Recurring });
                     }
                 }
             }
@@ -333,21 +333,21 @@
     const birthdays = [
         @foreach (var b in allBirthdays)
         {
-            <text>{ day: @b.Day, month: @b.Month, name: '@b.Name.Replace("'", "\\'")' },</text>
+            <text>{ day: @b.Day, month: @b.Month, name: '@b.Name.Replace("'", "\\'")', recurring: @b.Recurring.ToString().ToLower() },</text>
         }
     ];
 
     const holidays = [
         @foreach (var h in allHolidays)
         {
-            <text>{ day: @h.Day, month: @h.Month, name: '@h.Name.Replace("'", "\\'")' },</text>
+            <text>{ day: @h.Day, month: @h.Month, name: '@h.Name.Replace("'", "\\'")', recurring: @h.Recurring.ToString().ToLower() },</text>
         }
     ];
 
     const notes = [
         @foreach (var n in allNotes)
         {
-            <text>{ day: @n.Day, month: @n.Month, name: '@n.Name.Replace("'", "\\'")' },</text>
+            <text>{ day: @n.Day, month: @n.Month, name: '@n.Name.Replace("'", "\\'")', recurring: @n.Recurring.ToString().ToLower() },</text>
         }
     ];
 
@@ -369,23 +369,30 @@
             document.getElementById('charCount').textContent = '0';
             eventYear.value = selectedYear;
 
-            // Verificar se já existe aniversário ou feriado para este dia
+            // Verificar se já existe aniversário/feriado/nota para este dia
             const existingBirthday = birthdays.find(b => b.day === selectedDay && b.month === selectedMonth);
             const existingHoliday = holidays.find(h => h.day === selectedDay && h.month === selectedMonth);
             const existingNotes = notes.find(n => n.day === selectedDay && n.month === selectedMonth);
 
             if (existingBirthday) {
-                document.getElementById('eventType').value = 'birthday';
+                document.getElementById('eventType').value = 'birthdays';
                 document.getElementById('eventName').value = existingBirthday.name;
                 document.getElementById('charCount').textContent = existingBirthday.name.length;
+                document.getElementById('recurringSection').style.display = "none";
+                document.getElementById('isRecurring').checked = true; // Aniversários são sempre recorrentes
             } else if (existingHoliday) {
-                document.getElementById('eventType').value = 'holiday';
+                document.getElementById('eventType').value = 'holidays';
                 document.getElementById('eventName').value = existingHoliday.name;
                 document.getElementById('charCount').textContent = existingHoliday.name.length;
+                document.getElementById('recurringSection').style.display = "block";
+                document.getElementById('isRecurring').checked = existingHoliday.recurring;
+
             } else if (existingNotes) {
-                document.getElementById('eventType').value = 'note';
+                document.getElementById('eventType').value = 'notes';
                 document.getElementById('eventName').value = existingNotes.name;
                 document.getElementById('charCount').textContent = existingNotes.name.length;
+                document.getElementById('recurringSection').style.display = "block";
+                document.getElementById('isRecurring').checked = existingNotes.recurring;
             }
 
             // Abrir modal
@@ -402,7 +409,7 @@
 
     // Recorrente
     document.getElementById('eventType').addEventListener('change', function() {
-        document.getElementById('recurringSection').style.display = this.value === 'birthday' ? 'none' : 'block';
+        document.getElementById('recurringSection').style.display = this.value === 'birthdays' ? 'none' : 'block';
     });
 
     // Contador de caracteres
@@ -413,18 +420,19 @@
     // Botão Limpar
     document.getElementById('btnClear').addEventListener('click', function() {
         document.getElementById('eventName').value = '';
+        document.getElementById('isRecurring').checked = false;
         document.getElementById('charCount').textContent = '0';
     });
 
     // Botão Salvar
     document.getElementById('btnSave').addEventListener('click', async function() {
 
-        const eventType = document.getElementById('eventType').value;
+        const eventType = document.getElementById('eventType').value.trim();
         const eventName = document.getElementById('eventName').value.trim();
         const eventYear = document.getElementById('eventYear').value;
         const eventRecurring = document.getElementById('isRecurring').checked;
 
-        if (!eventType) {
+        if (eventType == '') {
             alert('Por favor, selecione o tipo de evento.');
             return;
         }

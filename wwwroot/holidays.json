@@ -68,19 +68,5 @@
     "Name": "Anivers\u00E1rio de S\u00E3o Paulo",
     "Year": 0,
     "Recurring": true
-  },
-  {
-    "Day": 4,
-    "Month": 6,
-    "Name": "teste",
-    "Year": 2025,
-    "Recurring": false
-  },
-  {
-    "Day": 10,
-    "Month": 6,
-    "Name": "teste2",
-    "Year": 0,
-    "Recurring": true
   }
 ]
