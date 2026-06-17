@@ -76,7 +76,7 @@
                     foreach (var h in mm.Holidays)
                     {
                         var dow = DowAbbrev(displayYear, mm.Month, h.Day);
-                        allHolidays.Add(new { Month = mm.Month, Day = h.Day, Name = h.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month), Recurring = h.Recurring });
+                        allHolidays.Add(new { Year = mm.Year, Month = mm.Month, Day = h.Day, Name = h.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month), Recurring = h.Recurring });
                     }
                 }
                 if (mm.Notes != null)
@@ -84,7 +84,7 @@
                     foreach (var n in mm.Notes)
                     {
                         var dow = DowAbbrev(displayYear, mm.Month, n.Day);
-                        allNotes.Add(new { Month = mm.Month, Day = n.Day, Name = n.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month), Recurring = n.Recurring });
+                        allNotes.Add(new { Year = mm.Year, Month = mm.Month, Day = n.Day, Name = n.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month), Recurring = n.Recurring });
                     }
                 }
             }
@@ -109,8 +109,10 @@
             Month = x.Month,
             Name = x.Name,
             Dow = x.Dow,
-            MonthAbbrev = x.MonthAbbrev
-        }).ToList();
+            MonthAbbrev = x.MonthAbbrev,
+            Year = x.Year,
+            Recurring = x.Recurring
+        }).Where(x => x.Recurring || x.Year == DateTime.Now.Year).ToList();
 
         var notesVm = allNotes.Select(x => new EventItem
         {
@@ -118,8 +120,10 @@
             Month = x.Month,
             Name = x.Name,
             Dow = x.Dow,
-            MonthAbbrev = x.MonthAbbrev
-        }).ToList();
+            MonthAbbrev = x.MonthAbbrev,
+            Year = x.Year,
+            Recurring = x.Recurring
+        }).Where(x => x.Recurring || x.Year == DateTime.Now.Year).ToList();
 
     }
 
