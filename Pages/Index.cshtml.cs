@@ -9,6 +9,10 @@ namespace WebCalendar.Pages
     {
         private readonly IWebHostEnvironment _env;
 
+        /// <summary>
+        /// Construtor da página, recebe o ambiente de hospedagem para acessar os arquivos
+        /// </summary>
+        /// <param name="env"></param>
         public IndexModel(IWebHostEnvironment env)
         {
             _env = env;
@@ -34,6 +38,10 @@ namespace WebCalendar.Pages
         public List<TempEvent> AllHolidays { get; set; } = [];
         public List<TempEvent> AllNotes { get; set; } = [];
 
+        /// <summary>
+        /// Inicializa a página, carregando os eventos para o ano atual e 
+        /// construindo a estrutura do calendário para exibição
+        /// </summary>
         public void OnGet()
         {
             Year = DateTime.Now.Year;
