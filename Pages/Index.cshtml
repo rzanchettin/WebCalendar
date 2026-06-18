@@ -8,125 +8,6 @@
 <div class="container-fluid px-1 mt-4">
     <h1>Calendário</h1>
 
-    @* Compute aggregated, ordered lists for side panels and include weekday abbreviation *@
-    @{
-        var allBirthdays = new List<dynamic>();
-        var allHolidays = new List<dynamic>();
-        var allNotes = new List<dynamic>();
-
-        int displayYear = (Model.Year.GetValueOrDefault() > 0) ? Model.Year.GetValueOrDefault() : DateTime.Now.Year;
-
-        string DowAbbrev(int y, int m, int d)
-        {
-            try
-            {
-                var dow = new DateTime(y, m, d).DayOfWeek;
-                return dow switch
-                {
-                    DayOfWeek.Monday => "seg",
-                    DayOfWeek.Tuesday => "ter",
-                    DayOfWeek.Wednesday => "qua",
-                    DayOfWeek.Thursday => "qui",
-                    DayOfWeek.Friday => "sex",
-                    DayOfWeek.Saturday => "sáb",
-                    DayOfWeek.Sunday => "dom",
-                    _ => "",
-                };
-            }
-            catch
-            {
-                return "";
-            }
-        }
-
-        string MonthAbbrev(int m)
-        {
-            return m switch
-            {
-                1 => "Jan",
-                2 => "Fev",
-                3 => "Mar",
-                4 => "Abr",
-                5 => "Mai",
-                6 => "Jun",
-                7 => "Jul",
-                8 => "Ago",
-                9 => "Set",
-                10 => "Out",
-                11 => "Nov",
-                12 => "Dez",
-                _ => m.ToString()
-            };
-        }
-
-        if (Model.Months != null)
-        {
-            foreach (var mm in Model.Months)
-            {
-                if (mm.Birthdays != null)
-                {
-                    foreach (var b in mm.Birthdays)
-                    {
-                        var dow = DowAbbrev(displayYear, mm.Month, b.Day);
-                        allBirthdays.Add(new { Month = mm.Month, Day = b.Day, Name = b.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month), Recurring = true });
-                    }
-                }
-                if (mm.Holidays != null)
-                {
-                    foreach (var h in mm.Holidays)
-                    {
-                        var dow = DowAbbrev(displayYear, mm.Month, h.Day);
-                        allHolidays.Add(new { Year = mm.Year, Month = mm.Month, Day = h.Day, Name = h.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month), Recurring = h.Recurring });
-                    }
-                }
-                if (mm.Notes != null)
-                {
-                    foreach (var n in mm.Notes)
-                    {
-                        var dow = DowAbbrev(displayYear, mm.Month, n.Day);
-                        allNotes.Add(new { Year = mm.Year, Month = mm.Month, Day = n.Day, Name = n.Name, Dow = dow, MonthAbbrev = MonthAbbrev(mm.Month), Recurring = n.Recurring });
-                    }
-                }
-            }
-
-            allBirthdays = allBirthdays.OrderBy(x => x.Month).ThenBy(x => x.Day).ToList();
-            allHolidays = allHolidays.OrderBy(x => x.Month).ThenBy(x => x.Day).ToList();
-            allNotes = allNotes.OrderBy(x => x.Month).ThenBy(x => x.Day).ToList();
-        }
-
-        var birthdaysVm = allBirthdays.Select(x => new EventItem
-        {
-            Day = x.Day,
-            Month = x.Month,
-            Name = x.Name,
-            Dow = x.Dow,
-            MonthAbbrev = x.MonthAbbrev
-        }).ToList();
-
-        var holidaysVm = allHolidays.Select(x => new EventItem
-        {
-            Day = x.Day,
-            Month = x.Month,
-            Name = x.Name,
-            Dow = x.Dow,
-            MonthAbbrev = x.MonthAbbrev,
-            Year = x.Year,
-            Recurring = x.Recurring
-        }).Where(x => x.Recurring || x.Year == DateTime.Now.Year).ToList();
-
-        var notesVm = allNotes.Select(x => new EventItem
-        {
-            Day = x.Day,
-            Month = x.Month,
-            Name = x.Name,
-            Dow = x.Dow,
-            MonthAbbrev = x.MonthAbbrev,
-            Year = x.Year,
-            Recurring = x.Recurring
-        }).Where(x => x.Recurring || x.Year == DateTime.Now.Year).ToList();
-
-    }
-
     <form method="post" class="row g-3 align-items-center" id="mainForm">
         <div class="col-auto">
             <label for="yearInput" class="col-form-label">Ano</label>
@@ -281,9 +162,9 @@
 <partial name="Modals/_AddEventModal"/>
 
 <script>
-    const birthdays = @Html.Raw(Json.Serialize(allBirthdays));
-    const holidays = @Html.Raw(Json.Serialize(allHolidays));
-    const notes = @Html.Raw(Json.Serialize(allNotes));
+    const birthdays = @Html.Raw(Json.Serialize(Model.AllBirthdays));
+    const holidays = @Html.Raw(Json.Serialize(Model.AllHolidays));
+    const notes = @Html.Raw(Json.Serialize(Model.AllNotes));
 </script>
 
 <script src="~/js/site.js" asp-append-version="true"></script>
@@ -293,8 +174,8 @@
     ModalId = "birthdaysModal",
     Title = "Aniversariantes",
     EmptyMessage = "Nenhum aniversariante encontrado.",
-    Year = displayYear,
-    Items = birthdaysVm
+    Year = Model.DisplayYear,
+    Items = Model.BirthdaysVm
 })
 
 @await Html.PartialAsync("Modals/_ListEventModal", new ListEventModalViewModel
@@ -302,8 +183,8 @@
     ModalId = "holidaysModal",
     Title = "Feriados",
     EmptyMessage = "Nenhum feriado encontrado.",
-    Year = displayYear,
-    Items = holidaysVm
+    Year = Model.DisplayYear,
+    Items = Model.HolidaysVm
 })
 
 @await Html.PartialAsync("Modals/_ListEventModal", new ListEventModalViewModel
@@ -311,7 +192,7 @@
     ModalId = "notesModal",
     Title = "Anotações",
     EmptyMessage = "Nenhuma anotação encontrada.",
-    Year = displayYear,
-    Items = notesVm
+    Year = Model.DisplayYear,
+    Items = Model.NotesVm
 }) 
 
