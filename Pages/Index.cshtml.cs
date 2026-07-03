@@ -145,16 +145,8 @@ namespace WebCalendar.Pages
             AllNotes = AllNotes.OrderBy(x => x.Month).ThenBy(x => x.Day).ToList();
 
             BirthdaysVm = AllBirthdays.Select(ToEventItem).ToList();
-
-            HolidaysVm = AllHolidays
-                .Select(ToEventItem)
-                .Where(x => x.Recurring || x.Year == DateTime.Now.Year)
-                .ToList();
-
-            NotesVm = AllNotes
-                .Select(ToEventItem)
-                .Where(x => x.Recurring || x.Year == DateTime.Now.Year)
-                .ToList();
+            HolidaysVm = AllHolidays.Select(ToEventItem).ToList();
+            NotesVm = AllNotes.Select(ToEventItem).ToList();
         }
 
         /// <summary>
